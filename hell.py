@@ -4,6 +4,7 @@
 
 # copy.deepcopy(list)
 import copy
+import time
 from queue import PriorityQueue
 from itertools import count
 
@@ -110,11 +111,11 @@ def heuristic(type, current_puzzle, final_puzzle):
 #-----------------------------------------#
 # position[0] = m_index
 # position[1] = n_index
-def move_up(parent_puzzle, position):
+def move_up(puzzle, position):
     if position[0] == 0:
         return 0 # -> Illegal move
     else:
-        new_puzzle = copy.deepcopy(parent_puzzle)
+        new_puzzle = copy.deepcopy(puzzle)
         new_puzzle[position[0]][position[1]] = new_puzzle[position[0] - 1][position[1]]
         new_puzzle[position[0] - 1][position[1]] = 0
         # TEST PRINT
@@ -124,48 +125,43 @@ def move_up(parent_puzzle, position):
         return new_puzzle
 
 
-def move_down(parent_puzzle, position):
-    if position[0] == (len(parent_puzzle) - 1):
+def move_down(puzzle, position):
+    if position[0] == (len(puzzle) - 1):
         return 0 # -> Illegal move
     else:
-        new_puzzle = copy.deepcopy(parent_puzzle)
+        new_puzzle = copy.deepcopy(puzzle)
         new_puzzle[position[0]][position[1]] = new_puzzle[position[0] + 1][position[1]]
         new_puzzle[position[0] + 1][position[1]] = 0
         return new_puzzle
 
 
-def move_left(parent_puzzle, position):
+def move_left(puzzle, position):
     if position[1] == 0:
         return 0 # -> Illegal move
     else:
-        new_puzzle = copy.deepcopy(parent_puzzle)
+        new_puzzle = copy.deepcopy(puzzle)
         new_puzzle[position[0]][position[1]] = new_puzzle[position[0]][position[1] - 1]
         new_puzzle[position[0]][position[1] - 1] = 0
         return new_puzzle
 
 
-def move_right(parent_puzzle, position):
-    if position[1] == (len(parent_puzzle[0]) - 1):
+def move_right(puzzle, position):
+    if position[1] == (len(puzzle[0]) - 1):
         return 0 # -> Illegal move
     else:
-        new_puzzle = copy.deepcopy(parent_puzzle)
+        new_puzzle = copy.deepcopy(puzzle)
         new_puzzle[position[0]][position[1]] = new_puzzle[position[0]][position[1] + 1]
         new_puzzle[position[0]][position[1] + 1] = 0
         return new_puzzle
 
-# Majo KING_void
-def hash_puzzle(puzzle, visited):
-    hashable_puzzle = tuple([tuple(row) for row in puzzle])
-    if hashable_puzzle not in visited:
-        visited[hashable_puzzle] = hashable_puzzle
-
 
 def greedy_algo(start_puzzle, final_puzzle, heuristic_type = None):
     pq = PriorityQueue()
-    count = count() # counts all generated Nodes
+    counter = count() # counts all generated Nodes
     visited_nodes = {}  # dict, key == value
+    route = [] # poradie operandov
 
-    current_node = Node(start_puzzle)
+    current_node = Node(start_puzzle, None, "S")
 
     # define heuristic in use
     h_type = 1
@@ -177,7 +173,7 @@ def greedy_algo(start_puzzle, final_puzzle, heuristic_type = None):
 
     # -> Tuple(Tuple(heuristic_value, counter_visited), current_puzzle)
     # PQ now contains start_puzzle
-    pq.put((heuristic_value, next(count)), current_node.puzzle)
+    pq.put(((heuristic_value, next(counter)), current_node))
 
     # POPIS
     # hashable_puzzle = tuple([tuple(row) for row in current_node.puzzle])
@@ -187,58 +183,54 @@ def greedy_algo(start_puzzle, final_puzzle, heuristic_type = None):
     # actual algo:
     while True:
         if pq.empty(): # return 0 if PQ is empty
+            print("Visited: " + str(next(counter)) + " nodes")
             print("There's no solution, you are looking for :(")
-            return -666
 
-        current_node = pq.get()
+        current_node = pq.get()[1]
+        route.append(current_node.last_operand)
+
+
         if current_node.puzzle == final_puzzle:
-            print("Hallelujah! Ama done.")
-            print("Visited " + str(count) + " nodes")
-            # print(cas_bezania_programu)
-            # print(postupnost_operandov = checkovat rodica a jeho rodica, ...
-            return 0
+            print("Visited: " + str(next(counter)) + " nodes")
+            print("Operands order: " + str(route))
+            break
 
-        zero_position = get_position(current_node.puzzle, 0)
+        hashable_puzzle = tuple([tuple(x) for x in current_node.puzzle])
 
-        if current_node.puzzle not in visited_nodes:
-            visited_nodes.append(current_node.puzzle)
+        if hashable_puzzle not in visited_nodes:
+            visited_nodes[hashable_puzzle] = hashable_puzzle
+            zero_position = get_position(current_node.puzzle, 0)
             next_puzzle = []
 
             if current_node.last_operand != "U": # ked bol UP nechcem ist dole <- cyklicke tahy
                 next_puzzle = move_down(current_node.puzzle, zero_position)
                 if next_puzzle:
-                    heuristic_value = heuristic(type, next_puzzle, final_puzzle)
-                    hash_puzzle(next_puzzle, visited_nodes)
+                    heuristic_value = heuristic(h_type, next_puzzle, final_puzzle)
                     next_node = Node(next_puzzle, current_node, "D")
-
-                    pq.put((heuristic_value, count), next_node)
+                    pq.put(((heuristic_value, next(counter)), next_node))
 
             if current_node.last_operand != "D":
                 next_puzzle = move_up(current_node.puzzle, zero_position)
                 if next_puzzle:
-                    heuristic_value = heuristic(type, next_puzzle, final_puzzle)
-                    hash_puzzle(next_puzzle, visited_nodes)
+                    heuristic_value = heuristic(h_type, next_puzzle, final_puzzle)
                     next_node = Node(next_puzzle, current_node, "U")
-
-                    pq.put((heuristic_value, count), next_node)
+                    pq.put(((heuristic_value, next(counter)), next_node))
 
             if current_node.last_operand != "L":
                 next_puzzle = move_right(current_node.puzzle, zero_position)
                 if next_puzzle:
-                    heuristic_value = heuristic(type, next_puzzle, final_puzzle)
-                    hash_puzzle(next_puzzle, visited_nodes)
+                    heuristic_value = heuristic(h_type, next_puzzle, final_puzzle)
                     next_node = Node(next_puzzle, current_node, "R")
-
-                    pq.put((heuristic_value, count), next_node)
+                    pq.put(((heuristic_value, next(counter)), next_node))
 
             if current_node.last_operand != "R":
                 next_puzzle = move_left(current_node.puzzle, zero_position)
                 if next_puzzle:
-                    heuristic_value = heuristic(type, next_puzzle, final_puzzle)
-                    hash_puzzle(next_puzzle, visited_nodes)
-                    next_node = Node(current_node.puzzle, zero_position)
+                    heuristic_value = heuristic(h_type, next_puzzle, final_puzzle)
+                    next_node = Node(next_puzzle, zero_position, "L")
+                    pq.put(((heuristic_value, next(counter)), next_node))
 
-                    pq.put((heuristic_value, count), next_node)
+
 
 
 
@@ -246,6 +238,14 @@ def greedy_algo(start_puzzle, final_puzzle, heuristic_type = None):
 
 
 def main():
+    start_time = time.time()
+
+    start_puzzle, final_puzzle = get_start_final_puzzle()
+    greedy_algo(start_puzzle,final_puzzle)
+
+    end_time = time.time()
+    time_exec = end_time - start_time
+    print("Exection time: " + str(time_exec) + " [s]")
 
 
 if __name__ == '__main__':
