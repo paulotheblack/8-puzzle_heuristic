@@ -1,19 +1,15 @@
 # Michal Paulovic
 # STU FIIT 2020
-# UI zadanie_2
+# AI assigment_2
 
-# copy.deepcopy(list)
 import copy
 import time
 from queue import PriorityQueue
 from itertools import count
 
-# Class Node (vrchol grafu)
-from puzzle_node import Node
-
-
-# reads config file
-# return puzzle_list
+#-----------------------------------------#
+#           Getters section               #
+#-----------------------------------------#
 def get_conf(file):
     puzzle = []
     file = open(file, 'r')
@@ -22,7 +18,7 @@ def get_conf(file):
         parsed_line = line.split()
         formated_line = []
 
-        # type conversion 'str' -> 'int'
+        # type conversion 'str' -> 'int' if needed
         for item in parsed_line:
             if item.isdigit():
                 item = int(item)
@@ -35,26 +31,20 @@ def get_conf(file):
     return puzzle
 
 
-# STDOUT information
-# return start_puzzle, final_puzzle
 def get_start_final_puzzle():
-    start_puzzle = get_conf(".begin.conf")
-    # TEST PRINT
+    start_puzzle = get_conf("start.conf")
     print("START_PUZZLE: " + str(len(start_puzzle)) + "x" + str(len(start_puzzle[0])))
     for i in start_puzzle:
         print(i)
 
-    final_puzzle = get_conf(".final.conf")
-    # TEST PRINT
-    # print("\nFINAL_PUZZLE:")
-    # for i in final_puzzle:
-    #     print(i)
+    final_puzzle = get_conf("final.conf")
+    print("\nFINAL_PUZZLE")
+    for i in final_puzzle:
+        print(i)
 
     return start_puzzle, final_puzzle
 
 
-# get position of desired element in puzzle
-# return array[M_index, N_index]
 def get_position(puzzle, element):
     for m in range(len(puzzle)):
         for n in range(len(puzzle[m])):
@@ -94,7 +84,7 @@ def get_heuristic_three(current_puzzle, final_puzzle):
     two = get_heuristic_two(current_puzzle, final_puzzle)
     return one + two
 
-# pomocna funckia pre greedy_algo
+# Heuristic function used by greedy algorithm
 def heuristic(type, current_puzzle, final_puzzle):
     if type == 1:
         heuristic_value = get_heuristic_one(current_puzzle, final_puzzle)
@@ -102,6 +92,8 @@ def heuristic(type, current_puzzle, final_puzzle):
         heuristic_value = get_heuristic_two(current_puzzle, final_puzzle)
     elif type == 3:
         heuristic_value = get_heuristic_three(current_puzzle, final_puzzle)
+    else:
+        return 1 # DEFAULT heuristic, if not set
 
     return heuristic_value
 
@@ -109,8 +101,6 @@ def heuristic(type, current_puzzle, final_puzzle):
 #-----------------------------------------#
 # Operands section: UP, DOWN, LEFT, RIGHT #
 #-----------------------------------------#
-# position[0] = m_index
-# position[1] = n_index
 def move_up(puzzle, position):
     if position[0] == 0:
         return 0 # -> Illegal move
@@ -118,10 +108,6 @@ def move_up(puzzle, position):
         new_puzzle = copy.deepcopy(puzzle)
         new_puzzle[position[0]][position[1]] = new_puzzle[position[0] - 1][position[1]]
         new_puzzle[position[0] - 1][position[1]] = 0
-        # TEST PRINT
-        # print("\nLegal move:")
-        # for i in new_puzzle:
-        #     print(i)
         return new_puzzle
 
 
@@ -155,46 +141,67 @@ def move_right(puzzle, position):
         return new_puzzle
 
 
-def greedy_algo(start_puzzle, final_puzzle, heuristic_type = None):
+#------------------------------------------------#
+# Class Node = Graph Node/Vertice representation #
+#------------------------------------------------#
+class Node:
+    def __init__(self, puzzle, parent = None, last_operand = ""):
+        self.puzzle = copy.deepcopy(puzzle)
+        self.parent = parent
+        self.last_operand = last_operand
+
+
+#-----------------------------------------#
+#     Greedy algorithm implementation     #
+#-----------------------------------------#
+def greedy_algo(start_puzzle, final_puzzle, h_type):
+    """
+    :param start_puzzle: puzzle from .begin.conf
+    :param final_puzzle:  puzzle from .final.conf
+    :param h_type: type of heurisitic function
+    :return: void function
+    """
     pq = PriorityQueue()
-    counter = count() # counts all generated Nodes
-    visited_nodes = {}  # dict, key == value
-    route = [] # poradie operandov
 
+    # Counts all generated Nodes
+    counter = count()
+
+    # Dicitonary of all visited nodes (key == value)
+    # Used becuase of optimalization (can be list also)
+    visited_nodes = {}
+
+    # List of operands used to achieve final_puzzle
+    route = []
+
+    """
+    Class Node
+        puzzle::list
+        parent::Node
+        last_operand::string (U/D/L/R) S = start
+    """
     current_node = Node(start_puzzle, None, "S")
-
-    # define heuristic in use
-    h_type = 1
-    # h_type = 2
-    # h_type = 3
 
     # heuristic_value for start_puzzle
     heuristic_value = heuristic(h_type, current_node.puzzle, final_puzzle)
 
-    # -> Tuple(Tuple(heuristic_value, counter_visited), current_puzzle)
-    # PQ now contains start_puzzle
+    # PriorityQueue now contains start_puzzle
+    # -> tuple(tuple(heuristic_value, counter_visited), current_puzzle)
     pq.put(((heuristic_value, next(counter)), current_node))
 
-    # POPIS
-    # hashable_puzzle = tuple([tuple(row) for row in current_node.puzzle])
-    # if hashable_puzzle not in visited_nodes:
-    #     visited_nodes[hashable_puzzle] = hashable_puzzle
-
-    # actual algo:
+    # actual greedy algorithm implementation
     while True:
-        if pq.empty(): # return 0 if PQ is empty
-            print("Visited: " + str(next(counter)) + " nodes")
-            print("There's no solution, you are looking for :(")
+        if pq.empty(): # Unable to solve puzzle
+            return counter, "There's no solution, you are looking for :("
 
+        # Get Node with the lowest heuristic value
         current_node = pq.get()[1]
         route.append(current_node.last_operand)
 
 
         if current_node.puzzle == final_puzzle:
-            print("Visited: " + str(next(counter)) + " nodes")
-            print("Operands order: " + str(route))
-            break
+            return counter, route
 
+        # list(list) -> tuple(tuple) <= because of optimalization
         hashable_puzzle = tuple([tuple(x) for x in current_node.puzzle])
 
         if hashable_puzzle not in visited_nodes:
@@ -202,7 +209,8 @@ def greedy_algo(start_puzzle, final_puzzle, heuristic_type = None):
             zero_position = get_position(current_node.puzzle, 0)
             next_puzzle = []
 
-            if current_node.last_operand != "U": # ked bol UP nechcem ist dole <- cyklicke tahy
+            # avoiding repeating moves (last move was not UP, can go down)
+            if current_node.last_operand != "U":
                 next_puzzle = move_down(current_node.puzzle, zero_position)
                 if next_puzzle:
                     heuristic_value = heuristic(h_type, next_puzzle, final_puzzle)
@@ -231,21 +239,19 @@ def greedy_algo(start_puzzle, final_puzzle, heuristic_type = None):
                     pq.put(((heuristic_value, next(counter)), next_node))
 
 
-
-
-
-
-
-
 def main():
-    start_time = time.time()
-
     start_puzzle, final_puzzle = get_start_final_puzzle()
-    greedy_algo(start_puzzle,final_puzzle)
 
-    end_time = time.time()
-    time_exec = end_time - start_time
-    print("Exection time: " + str(time_exec) + " [s]")
+    # start execution timer
+    start_time = time.time()
+    # change last paramater of greedy_algo to change heuritics in use (1/2/3)
+    visited_nodes, route = greedy_algo(start_puzzle, final_puzzle, 3)
+    # stop execution
+    execution_time = time.time() - start_time
+
+    print("\nVisited " + str(next(visited_nodes) - 1) + " Nodes")
+    print("Route: " + str(route))
+    print("Exection time: " + str(execution_time) + " [s]")
 
 
 if __name__ == '__main__':
