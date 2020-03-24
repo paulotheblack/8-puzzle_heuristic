@@ -11,11 +11,11 @@ from itertools import count
 from node import Node
 from informant import Informant
 
-#-----------------------------------------#
-#           Getters section               #
-#-----------------------------------------#
-def get_conf():
 
+# -----------------------------------------#
+#           Getters section               #
+# -----------------------------------------#
+def get_conf():
     config_files = ['start.conf', 'final.conf']
     puzzles_list = []
 
@@ -55,9 +55,10 @@ def get_position(puzzle, element):
             if puzzle[m][n] == element:
                 return [m, n]
 
-#-----------------------------------------#
+
+# -----------------------------------------#
 #          Heuristics section             #
-#-----------------------------------------#
+# -----------------------------------------#
 # Heuristika 1: Počet políčok, ktoré nie sú na svojom mieste
 def get_heuristic_one(current_puzzle, final_puzzle):
     count = 0
@@ -97,14 +98,15 @@ def heuristic(type, current_puzzle, final_puzzle):
     elif type == 3:
         return get_heuristic_three(current_puzzle, final_puzzle)
     else:
-        return get_heuristic_one(current_puzzle, final_puzzle) # DEFAULT heuristic, if not set
+        return get_heuristic_one(current_puzzle, final_puzzle)  # DEFAULT heuristic, if not set
 
-#-----------------------------------------#
+
+# -----------------------------------------#
 # Operands section: UP, DOWN, LEFT, RIGHT #
-#-----------------------------------------#
+# -----------------------------------------#
 def move_up(puzzle, position):
     if position[0] == 0:
-        return 0 # -> Illegal move
+        return 0  # -> Illegal move
     else:
         new_puzzle = copy.deepcopy(puzzle)
         new_puzzle[position[0]][position[1]] = new_puzzle[position[0] - 1][position[1]]
@@ -114,7 +116,7 @@ def move_up(puzzle, position):
 
 def move_down(puzzle, position):
     if position[0] == (len(puzzle) - 1):
-        return 0 # -> Illegal move
+        return 0  # -> Illegal move
     else:
         new_puzzle = copy.deepcopy(puzzle)
         new_puzzle[position[0]][position[1]] = new_puzzle[position[0] + 1][position[1]]
@@ -124,7 +126,7 @@ def move_down(puzzle, position):
 
 def move_left(puzzle, position):
     if position[1] == 0:
-        return 0 # -> Illegal move
+        return 0  # -> Illegal move
     else:
         new_puzzle = copy.deepcopy(puzzle)
         new_puzzle[position[0]][position[1]] = new_puzzle[position[0]][position[1] - 1]
@@ -134,31 +136,36 @@ def move_left(puzzle, position):
 
 def move_right(puzzle, position):
     if position[1] == (len(puzzle[0]) - 1):
-        return 0 # -> Illegal move
+        return 0  # -> Illegal move
     else:
         new_puzzle = copy.deepcopy(puzzle)
         new_puzzle[position[0]][position[1]] = new_puzzle[position[0]][position[1] + 1]
         new_puzzle[position[0]][position[1] + 1] = 0
         return new_puzzle
 
-#------------------------------------------------#
+
+# ------------------------------------------------#
 #         Greedy algorithm implementation        #
-#------------------------------------------------#
+# ------------------------------------------------#
 def greedy_algo(start_puzzle, final_puzzle, h_type):
     """
     :param start_puzzle: puzzle from .begin.conf
     :param final_puzzle:  puzzle from .final.conf
-    :param h_type: type of heurisitic function
-    :return: void function
+    :param h_type: type of heuristic function
+    :return: visited nodes, final_node, execution time
+    if final_node == -1  -> not solvable puzzle
     """
+    # start of timer for execution_time
     start_time = time.time()
+
+    # Creates 1 instance of class PriorityQueue
     pq = PriorityQueue()
 
     # Counts all generated Nodes
     counter = count()
 
-    # Dicitonary of all visited nodes (key == value)
-    # Used becuase of optimalization (can be list also)
+    # Dictionary of all visited nodes (key == value)
+    # Used because of optimization (can be list also)
     visited_nodes = {}
 
     # First node with special operand Start
@@ -171,10 +178,10 @@ def greedy_algo(start_puzzle, final_puzzle, h_type):
     # data types --> tuple(tuple(heuristic_value, counter_visited), current_node)
     pq.put(((heuristic_value, next(counter)), current_node))
 
-    # actual greedy algorithm implementation
+    # actual implementation of greedy algorithm
     while True:
-        if pq.empty(): # Unable to solve puzzle
-            # stop execution timer
+        if pq.empty():  # Unable to solve puzzle
+            # stop timer, get processing time
             execution_time = time.time() - start_time
             return counter, -1, execution_time
 
@@ -182,27 +189,27 @@ def greedy_algo(start_puzzle, final_puzzle, h_type):
         # (the lowest valued entry is the one returned by sorted(list(entries))[0]) <- docs.python.org
         current_node = pq.get()[1]
 
-        if current_node.puzzle == final_puzzle: # Puzzle is solved
+        if current_node.puzzle == final_puzzle:  # Puzzle is solved
             execution_time = time.time() - start_time
             return counter, current_node, execution_time
 
-        # list(list) -> tuple(tuple) <= because of optimalization
+        # list(list) -> tuple(tuple) <= because of optimization
         hash_puzzle = tuple([tuple(x) for x in current_node.puzzle])
 
-        if hash_puzzle not in visited_nodes: # if unique
+        if hash_puzzle not in visited_nodes:  # if unique
             visited_nodes[hash_puzzle] = hash_puzzle
 
-            # get starting position for moves
+            # get starting position of ZERO for moves
             zero_position = get_position(current_node.puzzle, 0)
             next_puzzle = []
 
             # Avoid repetitive moves (last move was NOT UP, so can go down)
-            # One move described as explanation
+            # One move_operand described as explanation
             if current_node.last_operand != "U":
                 next_puzzle = move_down(current_node.puzzle, zero_position)
-                if next_puzzle: # if legal move
+                if next_puzzle:  # if legal move (out of range of list)
 
-                    # Count heuristic value
+                    # Counts heuristic value for next_puzzle
                     heuristic_value = heuristic(h_type, next_puzzle, final_puzzle)
 
                     # Create instance of Node with newly generated puzzle, its parent and last operand
@@ -236,9 +243,10 @@ def greedy_algo(start_puzzle, final_puzzle, h_type):
 def main():
     start_puzzle, final_puzzle = get_conf()
 
-    for heuristic_type in range(1,4):
+    for heuristic_type in range(1, 4):
         visited_nodes, final_node, execution_time = greedy_algo(start_puzzle, final_puzzle, heuristic_type)
         Informant.give_info(visited_nodes, final_node, execution_time, heuristic_type)
+
 
 if __name__ == '__main__':
     main()

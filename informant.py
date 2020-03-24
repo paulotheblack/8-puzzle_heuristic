@@ -28,7 +28,7 @@ class Informant:
                            + str(heuristic_type)
                            + ".\nTotal " + str(len(route_nodes))
                            + " nodes on route to final puzzle."
-                           + "\nVisited in total " + str(next(visited_nodes) - 1)
+                           + "\nGenerated in total " + str(next(visited_nodes) - 1)
                            + " nodes." + "\nExecution time: " + str(execution_time)
                            + "[s] (RT)\nStarting point:\n")
             else:
@@ -39,7 +39,7 @@ class Informant:
 
         # Terminal info
         print("\nHeuristic " + str(heuristic_type)
-              + ":\nIt takes " + str(len(route_nodes)) + " nodes to solve puzzle."
+              + ":\nIt takes " + str(len(route_nodes)) + " moves to solve puzzle."
               + "\nRead file '" + str(file.name)
               + "' for more information.")
         file.close()
