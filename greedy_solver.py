@@ -223,12 +223,11 @@ def greedy_algo(start_puzzle, final_puzzle, h_type):
 
 
 def main():
-    screamer = Informant()
     start_puzzle, final_puzzle = get_conf()
 
     for heuristic_type in range(1,4):
         visited_nodes, final_node, execution_time = greedy_algo(start_puzzle, final_puzzle, heuristic_type)
-        screamer.give_info(visited_nodes, final_node, execution_time, heuristic_type)
+        Informant.give_info(visited_nodes, final_node, execution_time, heuristic_type)
 
 if __name__ == '__main__':
     main()

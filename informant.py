@@ -1,26 +1,21 @@
 class Informant:
-    def __init__(self, visited_nodes = None, final_node = None, execution_time = None, heuristic_type = None):
-        self.visited_nodes = visited_nodes
-        self.final_node = final_node
-        self.execution_time = execution_time
-        self.heuristic_type = heuristic_type
 
-    def give_info(self, visited_nodes, final_node, execution_time, heuristic_type):
+    @staticmethod
+    def give_info(visited_nodes, final_node, execution_time, heuristic_type):
         if final_node == -1:
             print("There is no solution you are looking for :(")
             exit(-1)
 
         route_operand = []
-        route_nodes = []
-        route_nodes.append(final_node)
+        route_nodes = [final_node]
 
         # get route_operand via each parent Node
-        while final_node.parent != None:
+        while final_node.parent is not None:
             route_operand.append(final_node.last_operand)
             route_nodes.append(final_node.parent)
             final_node = final_node.parent
 
-        route_operand.append("S") # Start operand <=> node.parent == None
+        route_operand.append("S")  # Start operand <=> node.parent == None
         route_operand.reverse()
         route_nodes.reverse()
 
@@ -48,4 +43,3 @@ class Informant:
               + "\nRead file '" + str(file.name)
               + "' for more information.")
         file.close()
-
