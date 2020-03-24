@@ -26,7 +26,7 @@ def get_conf():
         if file.name == config_files[0]:
             print("Start puzzle:")
         else:
-            print("Final Puzzle")
+            print("Final puzzle")
 
         for line in file:
             parsed_line = line.split()
@@ -174,10 +174,12 @@ def greedy_algo(start_puzzle, final_puzzle, h_type):
     # actual greedy algorithm implementation
     while True:
         if pq.empty(): # Unable to solve puzzle
+            # stop execution timer
             execution_time = time.time() - start_time
             return counter, -1, execution_time
 
         # Get Node with the lowest heuristic value
+        # (the lowest valued entry is the one returned by sorted(list(entries))[0]) <- docs.python.org
         current_node = pq.get()[1]
 
         if current_node.puzzle == final_puzzle: # Puzzle is solved
@@ -185,19 +187,28 @@ def greedy_algo(start_puzzle, final_puzzle, h_type):
             return counter, current_node, execution_time
 
         # list(list) -> tuple(tuple) <= because of optimalization
-        hashable_puzzle = tuple([tuple(x) for x in current_node.puzzle])
+        hash_puzzle = tuple([tuple(x) for x in current_node.puzzle])
 
-        if hashable_puzzle not in visited_nodes:
-            visited_nodes[hashable_puzzle] = hashable_puzzle
+        if hash_puzzle not in visited_nodes: # if unique
+            visited_nodes[hash_puzzle] = hash_puzzle
+
+            # get starting position for moves
             zero_position = get_position(current_node.puzzle, 0)
             next_puzzle = []
 
-            # avoiding repeating moves (last move was not UP, can go down)
+            # Avoid repetitive moves (last move was NOT UP, so can go down)
+            # One move described as explanation
             if current_node.last_operand != "U":
                 next_puzzle = move_down(current_node.puzzle, zero_position)
-                if next_puzzle:
+                if next_puzzle: # if legal move
+
+                    # Count heuristic value
                     heuristic_value = heuristic(h_type, next_puzzle, final_puzzle)
+
+                    # Create instance of Node with newly generated puzzle, its parent and last operand
                     next_node = Node(next_puzzle, current_node, "D")
+
+                    # Push (tuple(h_value, id_generated_node, object node))
                     pq.put(((heuristic_value, next(counter)), next_node))
 
             if current_node.last_operand != "D":
